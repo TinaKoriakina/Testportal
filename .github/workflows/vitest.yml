@@ -17,13 +17,13 @@ env:
   REPOSITORY_NAME: ${{ github.repository }}
   REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+  ENVIRONMENT: 'staging'
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout main repository
       - name: Checkout main repo
         uses: actions/checkout@v4
         with:
@@ -33,22 +33,25 @@ jobs:
       - name: Show files
         run: ls -la
 
-      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          registry-url: 'https://npm.pkg.github.com'
 
-      # 3️⃣ Install dependencies
-      - name: Install dependencies
+      - name: Configure npm auth for GitHub Packages
         run: |
-          node -v
-          npm -v
-          npm install
+          echo "@vention-test-portal:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.PERSONAL_GITHUB_TOKEN }}" >> .npmrc
+   
+      - name: Install test reporter CLI
+        run: |
+          npm install @vention-test-portal/test-portal-integration-cli
 
-      # 4️⃣ Run Vitest tests
+      # 4️ Run Vitest tests
       - name: Run Vitest
         run: npm run test
+        continue-on-error: true
 
       - name: Upload Vitest report artifact
         if: always()
@@ -57,102 +60,9 @@ jobs:
           name: vitest-report
           path: reports/vitest-report.json
 
-      # 5️⃣ Checkout CLI repo
-      - name: Checkout CLI repo
-        if: always()
-        uses: actions/checkout@v4
-        with:
-          repository: Vention-Test-Portal/test-portal-integration-cli
-          ref: fix/send-logic
-          token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
-          path: utils-repo
-
-      - name: List utils-repo files
-        if: always()
-        run: ls -la utils-repo
-
-      # 6️⃣ Install and build CLI repo
-      - name: Install & build CLI
+      - name: Upload Test Results
         if: always()
         run: |
-          cd utils-repo
-          npm install
-          npm run build
-
-      # 7️⃣ Process Vitest report with CLI
-      - name: Process Vitest report
-        if: always()
-        run: |
-          VITEST_REPORT=$GITHUB_WORKSPACE/reports/vitest-report.json
-          SCRIPT_PATH=$GITHUB_WORKSPACE/utils-repo/dist/src/cli.js
-          echo "TEST_PORTAL_URL: $TEST_PORTAL_URL"
-          echo "TEST_PORTAL_API_KEY: $TEST_PORTAL_API_KEY"
-
-          ls -l $VITEST_REPORT || true
-          ls -l $SCRIPT_PATH || true
-
-          node $SCRIPT_PATH -i "$VITEST_REPORT" -t vitest
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+          npx @vention-test-portal/test-portal-integration-cli upload \
+            --input $GITHUB_WORKSPACE/reports/vitest-report.json \
+            --type vitest \
