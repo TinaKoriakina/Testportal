@@ -24,35 +24,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1 Step: Checkout main repo
       - name: Checkout main repo
         uses: actions/checkout@v4
         with:
           repository: sv-kisel/vitest-junit
           ref: main
 
-      - name: Show files
-        run: ls -la
-
+      # 2 Step: Setup Node.js      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           registry-url: 'https://npm.pkg.github.com'
 
+      # 3 Step: Configure npm auth for GitHub Packages
       - name: Configure npm auth for GitHub Packages
         run: |
           echo "@vention-test-portal:registry=https://npm.pkg.github.com" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.PERSONAL_GITHUB_TOKEN }}" >> .npmrc
    
+      # 4 Step: Install test reporter CLI        
       - name: Install test reporter CLI
         run: |
           npm install @vention-test-portal/test-portal-integration-cli
 
-      # 4️ Run Vitest tests
+      # 5 Step: Run Vitest tests
       - name: Run Vitest
         run: npm run test
         continue-on-error: true
 
+      # 6 Step: Upload Vitest report artifact
       - name: Upload Vitest report artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -60,6 +62,7 @@ jobs:
           name: vitest-report
           path: reports/vitest-report.json
 
+      # 7 Step: Upload Test Results into Test Portal        
       - name: Upload Test Results
         if: always()
         run: |
