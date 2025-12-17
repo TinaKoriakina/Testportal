@@ -7,7 +7,7 @@ on:
 
 env:
   TEST_PORTAL_URL: ${{ secrets.TEST_PORTAL_URL }}
-  TEST_PORTAL_API_KEY: ${{ secrets.TEST_PORTAL_API_KEY }}
+  TEST_PORTAL_API_KEY: ${{ secrets.PW_SECRET }}
 
 jobs:
   test:
