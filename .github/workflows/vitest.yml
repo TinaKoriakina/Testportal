@@ -47,7 +47,7 @@ jobs:
       # 4 Step: Install test reporter CLI        
       - name: Install test reporter CLI
         run: |
-          npm install @vention-test-portal/test-portal-integration-cli@1.1.0
+          npm install @vention-test-portal/test-portal-integration-cli@1.1.1
 
       # 5 Step: Run Vitest tests
       - name: Run Vitest
